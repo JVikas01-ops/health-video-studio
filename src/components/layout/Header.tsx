@@ -1,5 +1,5 @@
 import React from 'react';
-import { Film, Plus, ChevronDown, Sparkles, FolderArchive } from 'lucide-react';
+import { Film, Plus, ChevronDown, Sparkles, FolderArchive, Zap } from 'lucide-react';
 import type { Project } from '../../types';
 
 interface HeaderProps {
@@ -9,6 +9,7 @@ interface HeaderProps {
   onOpenNewProjectModal: () => void;
   onOpenAISettings: () => void;
   onExportCurrentProject: () => void;
+  onOpenFullAutomation?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -18,6 +19,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenNewProjectModal,
   onOpenAISettings,
   onExportCurrentProject,
+  onOpenFullAutomation,
 }) => {
   return (
     <header className="h-16 border-b border-slate-800 bg-slate-950/80 backdrop-blur-md px-5 flex items-center justify-between sticky top-0 z-40">
@@ -67,6 +69,18 @@ export const Header: React.FC<HeaderProps> = ({
 
       {/* Right Controls */}
       <div className="flex items-center gap-2.5">
+        {onOpenFullAutomation && (
+          <button
+            onClick={onOpenFullAutomation}
+            type="button"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg bg-gradient-to-r from-amber-400 via-rose-500 to-cyan-400 hover:opacity-95 text-slate-950 shadow-md shadow-amber-500/20 transition transform active:scale-95"
+            title="Launch 1-Click Autonomous Production Pipeline"
+          >
+            <Zap className="w-3.5 h-3.5 fill-slate-950" />
+            <span>Auto-Pilot</span>
+          </button>
+        )}
+
         <button
           onClick={onOpenAISettings}
           type="button"
@@ -90,7 +104,7 @@ export const Header: React.FC<HeaderProps> = ({
         <button
           onClick={onOpenNewProjectModal}
           type="button"
-          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-gradient-to-r from-amber-500 to-rose-600 hover:from-amber-400 hover:to-rose-500 text-white shadow-md shadow-amber-950/30 transition transform active:scale-95"
+          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 transition transform active:scale-95"
         >
           <Plus className="w-3.5 h-3.5" />
           <span>New Project</span>

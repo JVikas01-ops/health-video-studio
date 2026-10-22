@@ -22,6 +22,7 @@ import { ExportFileManager } from './components/export/ExportFileManager';
 import { GeminiWebAssistant } from './components/gemini/GeminiWebAssistant';
 import { NewProjectModal } from './components/modals/NewProjectModal';
 import { AISettingsModal } from './components/modals/AISettingsModal';
+import { FullAutomationModal } from './components/automation/FullAutomationModal';
 
 export function App() {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -32,6 +33,7 @@ export function App() {
   // Modals
   const [isNewProjectOpen, setIsNewProjectOpen] = useState(false);
   const [isAISettingsOpen, setIsAISettingsOpen] = useState(false);
+  const [isFullAutomationOpen, setIsFullAutomationOpen] = useState(false);
 
   // Load projects from IndexedDB on startup
   useEffect(() => {
@@ -139,6 +141,7 @@ export function App() {
         onOpenNewProjectModal={() => setIsNewProjectOpen(true)}
         onOpenAISettings={() => setIsAISettingsOpen(true)}
         onExportCurrentProject={handleExportCurrent}
+        onOpenFullAutomation={() => setIsFullAutomationOpen(true)}
       />
 
       {/* Main Studio Workbench */}
@@ -159,6 +162,7 @@ export function App() {
                   project={currentProject}
                   onUpdateProject={handleUpdateProject}
                   onNavigateTab={setActiveTab}
+                  onOpenFullAutomation={() => setIsFullAutomationOpen(true)}
                 />
               )}
 
@@ -169,6 +173,7 @@ export function App() {
                   onDuplicateProject={handleDuplicateProject}
                   onDeleteProject={handleDeleteProject}
                   onNavigateTab={setActiveTab}
+                  onOpenFullAutomation={() => setIsFullAutomationOpen(true)}
                 />
               )}
 
@@ -253,6 +258,16 @@ export function App() {
         isOpen={isAISettingsOpen}
         onClose={() => setIsAISettingsOpen(false)}
       />
+
+      {currentProject && (
+        <FullAutomationModal
+          isOpen={isFullAutomationOpen}
+          onClose={() => setIsFullAutomationOpen(false)}
+          project={currentProject}
+          onUpdateProject={handleUpdateProject}
+          onNavigateTab={setActiveTab}
+        />
+      )}
     </div>
   );
 }

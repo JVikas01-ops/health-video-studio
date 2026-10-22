@@ -11,6 +11,7 @@ import {
   ArrowRight,
   CheckCircle,
   Sparkles,
+  Zap,
 } from 'lucide-react';
 import type { Project, TargetAudience, VisualStyle, ProjectStatus } from '../../types';
 import { StatusBadge, ApprovalBadge } from '../common/StatusBadge';
@@ -22,6 +23,7 @@ interface ProjectDashboardProps {
   onDuplicateProject: (project: Project) => void;
   onDeleteProject: (projectId: string) => void;
   onNavigateTab: (tab: StudioTab) => void;
+  onOpenFullAutomation?: () => void;
 }
 
 export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
@@ -30,6 +32,7 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
   onDuplicateProject,
   onDeleteProject,
   onNavigateTab,
+  onOpenFullAutomation,
 }) => {
   const [isEditingSettings, setIsEditingSettings] = useState(false);
 
@@ -129,6 +132,43 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
             </button>
           </div>
         </div>
+      </div>
+
+      {/* 1-Click Studio Full Automation (Auto-Pilot) Banner */}
+      <div className="relative rounded-2xl bg-gradient-to-r from-amber-950/40 via-rose-950/30 to-cyan-950/40 border border-amber-500/40 p-6 shadow-2xl flex flex-col md:flex-row md:items-center justify-between gap-5 overflow-hidden">
+        <div className="absolute top-0 right-1/4 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="flex items-center gap-4 relative z-10">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-400 via-rose-500 to-cyan-400 p-0.5 flex-shrink-0 shadow-lg shadow-amber-500/20">
+            <div className="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center">
+              <Zap className="w-6 h-6 text-amber-400" />
+            </div>
+          </div>
+          <div>
+            <div className="flex items-center gap-2.5">
+              <h2 className="text-base font-extrabold text-white tracking-wide">
+                Studio Full Automation (Auto-Pilot)
+              </h2>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-300 font-extrabold border border-amber-400/30">
+                1-CLICK END-TO-END
+              </span>
+            </div>
+            <p className="text-xs text-slate-300 mt-1 max-w-2xl leading-relaxed">
+              Autonomous end-to-end video pipeline: automatically drafts Story Concept ➔ generates 30–40s multi-scene script ➔ renders high-res 3D scene visual frames ➔ synthesizes cinematic motion camera takes ➔ synthesizes character TTS voiceovers ➔ assembles the complete Final Edit master timeline.
+            </p>
+          </div>
+        </div>
+
+        {onOpenFullAutomation && (
+          <button
+            type="button"
+            onClick={onOpenFullAutomation}
+            className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-amber-400 via-rose-500 to-cyan-400 hover:opacity-95 text-slate-950 text-xs font-black tracking-wide transition shadow-xl shadow-amber-500/25 shrink-0 transform active:scale-95"
+          >
+            <Zap className="w-4 h-4 fill-slate-950" />
+            <span>START AUTO-PILOT</span>
+            <ArrowRight className="w-4 h-4" />
+          </button>
+        )}
       </div>
 
       {/* Gemini Website 4-Step Studio Fast Track */}
