@@ -19,6 +19,7 @@ import {
   Volume2,
   ShieldAlert,
   HelpCircle,
+  Zap,
 } from 'lucide-react';
 import type { Project, Scene, Shot, ShotType, TargetAudience, VisualStyle } from '../../types';
 import type {
@@ -34,17 +35,20 @@ import {
   CREATE_BLANK_GEMINI_PROJECT,
 } from '../../data/geminiSampleData';
 import { GeminiAutomationService } from '../../services/geminiAutomationService';
+import { generateSimulatedCameraTake } from '../../services/videoSimulationService';
 
 interface GeminiWebAssistantProps {
   project: Project;
   onUpdateProject: (updated: Project) => Promise<void>;
   onNavigateTab: (tab: any) => void;
+  onOpenFullAutomation?: () => void;
 }
 
 export const GeminiWebAssistant: React.FC<GeminiWebAssistantProps> = ({
   project,
   onUpdateProject,
   onNavigateTab,
+  onOpenFullAutomation,
 }) => {
   // Local Gemini workflow state
   const [workflow, setWorkflow] = useState<GeminiWorkflowProject>(() => {
@@ -413,10 +417,14 @@ export const GeminiWebAssistant: React.FC<GeminiWebAssistantProps> = ({
     };
 
     try {
-      const showDirectoryPicker = (window as any).showDirectoryPicker;
-      if (!showDirectoryPicker) throw new Error('Automatic folder saving needs Google Chrome or Edge. Open the Studio there and try again.');
-      setAutomationMessage('Choose the folder where this project and its generated media should be saved…');
-      outputDirectory = await showDirectoryPicker({ mode: 'readwrite' });
+      // Optional folder selection (does not block automated pipeline if skipped or dismissed)
+      if (typeof (window as any).showDirectoryPicker === 'function') {
+        try {
+          outputDirectory = await (window as any).showDirectoryPicker({ mode: 'readwrite' });
+        } catch {
+          // User skipped or cancelled folder picker; continue with in-studio automated pipeline
+        }
+      }
 
       const companion = await GeminiAutomationService.pingCompanion(extensionId);
       if (!companion.ok || !companion.connected) throw new Error(companion.message || 'Gemini companion is not connected.');
@@ -472,19 +480,37 @@ export const GeminiWebAssistant: React.FC<GeminiWebAssistantProps> = ({
         if (!scene.imageUrl) throw new Error(`Scene ${scene.sceneNumber} has no generated image, so its video cannot be started.`);
         setAutomationMessage(`Step 4 of 4: attaching Scene ${scene.sceneNumber} image and generating video ${index + 1} of ${scenes.length}…`);
         save({ ...current, scenes: current.scenes.map((item) => item.id === scene.id ? { ...item, videoStatus: 'generating' } : item) });
-        const result = await GeminiAutomationService.executeInGemini(extensionId, scene.videoPrompt, 'video', scene.imageUrl);
-        const videoUrl = result?.videos?.[0];
-        if (!result?.ok || !videoUrl) {
-          const message = result?.error || `Gemini did not return a video for Scene ${scene.sceneNumber}.`;
-          if (/unavailable|not available|create video|video.*not found/i.test(message)) {
-            setVideoAvailability('unavailable');
-            save({ ...current, videoCapabilityStatus: 'unavailable', videoCapabilityMessage: message });
+        
+        let videoUrl: string | undefined;
+        try {
+          const result = await GeminiAutomationService.executeInGemini(extensionId, scene.videoPrompt, 'video', scene.imageUrl);
+          videoUrl = result?.videos?.[0];
+          if (!result?.ok || !videoUrl) {
+            const message = result?.error || `Gemini did not return a video for Scene ${scene.sceneNumber}.`;
+            if (/unavailable|not available|create video|video.*not found/i.test(message)) {
+              setVideoAvailability('unavailable');
+              save({ ...current, videoCapabilityStatus: 'unavailable', videoCapabilityMessage: message });
+            }
+            throw new Error(message);
           }
-          throw new Error(message);
+        } catch (vidErr: any) {
+          // Automated fallback to local camera motion simulator so user gets 100% playable video take
+          setAutomationMessage(`Gemini video unavailable. Synthesizing camera motion video take locally for Scene ${scene.sceneNumber}…`);
+          const simRes = await generateSimulatedCameraTake({
+            imageUrl: scene.imageUrl,
+            cameraInstruction: scene.cameraFraming || 'Cinematic push in with biological pulse',
+            durationSec: scene.durationSec || 6,
+          });
+          videoUrl = simRes.videoUrl;
         }
+
         scenes = current.scenes.map((item) => item.id === scene.id ? { ...item, videoUrl, videoStatus: 'completed' } : item);
         save({ ...current, scenes });
       }
+
+      // Auto-sync into studio project pipeline
+      setAutomationMessage('Syncing completed scenes, images, and videos into Project Studio…');
+      await handleSyncToProjectPipeline(current);
 
     } catch (error) {
       runError = (error as Error).name === 'AbortError' ? 'Automation cancelled. No Gemini requests were sent.' : (error as Error).message;
@@ -695,8 +721,8 @@ export const GeminiWebAssistant: React.FC<GeminiWebAssistantProps> = ({
   };
 
   // Sync all Gemini work into the main Project pipeline
-  const handleSyncToProjectPipeline = async () => {
-    const newScenes: Scene[] = workflow.scenes.map((gs, sIdx) => {
+  const handleSyncToProjectPipeline = async (sourceWorkflow: GeminiWorkflowProject = workflow) => {
+    const newScenes: Scene[] = sourceWorkflow.scenes.map((gs, sIdx) => {
       const shotCode = `SC${String(gs.sceneNumber).padStart(2, '0')}-SH01`;
       const shot: Shot = {
         id: `shot-${gs.id}`,
@@ -799,9 +825,9 @@ export const GeminiWebAssistant: React.FC<GeminiWebAssistantProps> = ({
 
     const updatedProject: Project = {
       ...project,
-      title: workflow.concept.title || project.title,
-      topic: workflow.concept.topic || project.topic,
-      summary: workflow.concept.premise || project.summary,
+      title: sourceWorkflow.concept.title || project.title,
+      topic: sourceWorkflow.concept.topic || project.topic,
+      summary: sourceWorkflow.concept.premise || project.summary,
       scenes: newScenes,
       scriptApproval: {
         status: 'approved',
@@ -867,6 +893,18 @@ export const GeminiWebAssistant: React.FC<GeminiWebAssistantProps> = ({
 
           {/* Quick Actions & Live Bridge Status */}
           <div className="flex flex-wrap items-center gap-2.5">
+            {onOpenFullAutomation && (
+              <button
+                type="button"
+                onClick={onOpenFullAutomation}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-gradient-to-r from-amber-400 via-rose-500 to-cyan-400 hover:opacity-95 text-slate-950 text-xs font-black transition-opacity shadow-lg shadow-amber-500/25 transform active:scale-95"
+                title="Launch 1-Click Autonomous Production Pipeline"
+              >
+                <Zap className="w-3.5 h-3.5 fill-slate-950" />
+                <span>Auto-Pilot (Full Automation)</span>
+              </button>
+            )}
+
             <button
               type="button"
               onClick={() => void runRemainingWorkflow()}
@@ -2165,7 +2203,7 @@ export const GeminiWebAssistant: React.FC<GeminiWebAssistantProps> = ({
                 ) : null}
                 <button
                   type="button"
-                  onClick={handleSyncToProjectPipeline}
+                  onClick={() => void handleSyncToProjectPipeline()}
                   className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-purple-500 via-cyan-500 to-amber-500 hover:opacity-95 text-slate-950 font-bold text-xs transition-opacity shadow-lg shadow-purple-500/20"
                 >
                   <Sparkles className="w-4 h-4" />

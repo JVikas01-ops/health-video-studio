@@ -18,6 +18,7 @@ dist-ssr
 *.local
 /exports/
 /generated-projects/
+/automated-production/
 # The app saves each exported story as a folder under the selected directory.
 /*/images/
 /*/videos/

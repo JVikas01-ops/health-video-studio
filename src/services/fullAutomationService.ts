@@ -1,10 +1,10 @@
-import type { Project, Scene, Shot, ShotType, VisualStyle, TargetAudience, Character } from '../types';
+import type { Project, Scene, Shot, ShotType, VisualStyle, TargetAudience } from '../types';
 import type { GeminiConcept, GeminiSceneItem, GeminiWorkflowProject } from '../types/geminiAssistant';
 import { GeminiAutomationService } from './geminiAutomationService';
 import { renderProceduralOrganFrame } from './imageGenerationService';
 import { generateSimulatedCameraTake } from './videoSimulationService';
 import { synthesizeCharacterSpeech } from './voiceSynthesisService';
-import { DEFAULT_CHARACTERS } from '../data/defaultCharacters';
+import { getDefaultCharacters } from '../data/defaultCharacters';
 import { saveProject } from './projectStorage';
 
 export type AutomationMode = 'hybrid' | 'gemini' | 'local';
@@ -57,6 +57,8 @@ export class FullAutomationService {
       tone: 'Dramatic, Educational & Comedic',
       audience: targetAudience,
       visualStyle,
+      includeTransliteration: false,
+      includeTranslation: false,
       characters: [
         {
           id: 'char-brain-auto',
@@ -245,7 +247,12 @@ export class FullAutomationService {
       if (this.stopRequested) throw new Error('Automation was cancelled by user.');
     };
 
-    let concept: GeminiConcept;
+    let concept: GeminiConcept = this.generateLocalConcept(
+      config.topic,
+      config.visualStyle,
+      config.targetAudience,
+      config.language
+    );
     let scenes: GeminiSceneItem[] = [];
 
     // ==========================================
@@ -283,6 +290,8 @@ export class FullAutomationService {
                 tone: 'Dramatic & Educational',
                 audience: config.targetAudience || 'General Public',
                 visualStyle: config.visualStyle || '3D Expressive Pixar Style',
+                includeTransliteration: false,
+                includeTranslation: false,
                 characters: parsed.characters && parsed.characters.length > 0 ? parsed.characters : this.generateLocalConcept(config.topic).characters,
                 isApproved: true,
                 isSampleContent: false,
@@ -606,7 +615,6 @@ export class FullAutomationService {
           : [],
         approvedVideoId: gs.videoUrl ? `vid-${gs.id}` : undefined,
         attachedVideoUrl: gs.videoUrl,
-        audioTakeUrl: shotAudioUrls[gs.id],
         status: 'approved',
         durationSec: gs.durationSec,
         soundEffects: [
@@ -643,39 +651,8 @@ export class FullAutomationService {
       };
     });
 
-    // Map characters
-    const mappedCharacters: Character[] = concept.characters.map((cb, idx) => {
-      const existing = DEFAULT_CHARACTERS.find(
-        (dc) => dc.name.toLowerCase() === cb.name.toLowerCase() || dc.organType === cb.organRole.toLowerCase()
-      );
-      if (existing) return existing;
-
-      const organLower = cb.organRole.toLowerCase();
-      const organType = organLower.includes('brain')
-        ? 'brain'
-        : organLower.includes('heart')
-        ? 'heart'
-        : organLower.includes('lung')
-        ? 'lungs'
-        : organLower.includes('kidney')
-        ? 'kidneys'
-        : organLower.includes('stomach')
-        ? 'stomach'
-        : organLower.includes('liver')
-        ? 'liver'
-        : 'brain';
-
-      return {
-        id: `char-auto-${idx + 1}-${Date.now().toString(36)}`,
-        name: cb.name,
-        organType: organType as any,
-        colorTheme: '#f43f5e',
-        personality: cb.personality,
-        voiceDeliveryNotes: cb.voiceNote,
-        promptPrefix: cb.visualTraits,
-        poses: [],
-      };
-    });
+    // Default characters mapped
+    const defaultChars = getDefaultCharacters(baseProject.id);
 
     // Arrange timeline shots for Final Edit
     const arrangedShotIds = newScenes.flatMap((s) => s.shots.map((sh) => sh.id));
@@ -692,7 +669,7 @@ export class FullAutomationService {
       topic: concept.topic || baseProject.topic,
       summary: concept.premise || baseProject.summary,
       scenes: newScenes,
-      characters: mappedCharacters.length > 0 ? mappedCharacters : baseProject.characters,
+      characters: defaultChars.length > 0 ? defaultChars : baseProject.characters,
       scriptApproval: {
         status: 'approved',
         history: [
@@ -721,7 +698,7 @@ export class FullAutomationService {
         ],
         lastReviewedAt: new Date().toISOString(),
       },
-      status: 'completed',
+      status: 'Review & Approved',
       updatedAt: new Date().toISOString(),
     };
 
@@ -737,6 +714,8 @@ export class FullAutomationService {
       isScriptApproved: true,
       totalDurationSec: totalDuration,
       videoCapabilityStatus: 'available',
+      upstreamModified: false,
+      createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
     localStorage.setItem(`hvs_gemini_workflow_${finalizedProject.id}`, JSON.stringify(workflowData));

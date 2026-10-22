@@ -63,7 +63,22 @@
 - **Batch Prompt Sheet (`.txt`):** Organized list of all Midjourney and Runway prompts.
 - Virtual project file directory tree (`/scripts/`, `/characters/`, `/shots/prompts/`, `/audio/`, `/videos/`).
 
-### 8. Modular AI Engine Connectors
+### 8. Studio Full Automation (Auto-Pilot) ⚡
+- **1-Click End-to-End Production:** Takes any health/biology topic and autonomously generates:
+  1. *Story Concept & Character Casting* (Dr. Synapse, Captain Pulse, The Nephron Duo, Chef Acidus).
+  2. *30–40s Multi-Scene Screenplay* with emotional delivery notes and dialogue.
+  3. *High-Resolution Visual Frames* (Gemini Web or Procedural 3D biological canvas artwork).
+  4. *Cinematic Motion Video Takes* (Gemini Video synthesis or HTML5 MediaRecorder Camera Simulator).
+  5. *Character TTS Voiceover Audio* (Web Speech synthesis with organ-specific voice profiles).
+  6. *Master Timeline Assembly & Auto-Approval* directly in the Final Edit Studio.
+- **Autonomous CLI Pipeline:** Run completely headless from your command line:
+  ```bash
+  npm run automate
+  # or custom topic:
+  npm run automate -- --topic "How Kidneys Filter Toxins"
+  ```
+
+### 9. Modular AI Engine Connectors
 - Runs 100% locally and offline out-of-the-box using the built-in biological story engine.
 - Optional Bring-Your-Own-Key (BYOK) connectors for Google Gemini, OpenAI, ElevenLabs, and Runway.
 

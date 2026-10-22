@@ -3,7 +3,6 @@ import {
   Sparkles,
   Zap,
   Play,
-  RotateCcw,
   CheckCircle2,
   AlertTriangle,
   Clapperboard,
@@ -11,12 +10,9 @@ import {
   Camera,
   Volume2,
   X,
-  Layers,
   Download,
-  ArrowRight,
-  ShieldAlert,
 } from 'lucide-react';
-import type { Project, VisualStyle, TargetAudience } from '../../types';
+import type { Project, VisualStyle } from '../../types';
 import type { AutomationMode, AutomationProgress } from '../../services/fullAutomationService';
 import { FullAutomationService } from '../../services/fullAutomationService';
 import { GeminiAutomationService } from '../../services/geminiAutomationService';
@@ -53,7 +49,7 @@ export const FullAutomationModal: React.FC<FullAutomationModalProps> = ({
   const [synthesizeAudio, setSynthesizeAudio] = useState<boolean>(true);
 
   // Companion status
-  const [extensionId, setExtensionId] = useState<string>(() => localStorage.getItem('hvs_gemini_extension_id') || '');
+  const extensionId = localStorage.getItem('hvs_gemini_extension_id') || '';
   const [companionActive, setCompanionActive] = useState<boolean>(false);
 
   // Execution State
