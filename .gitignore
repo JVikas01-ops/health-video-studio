@@ -18,6 +18,13 @@ dist-ssr
 *.local
 /exports/
 /generated-projects/
+# The app saves each exported story as a folder under the selected directory.
+/*/images/
+/*/videos/
+/*/scripts/
+/*/prompts/
+/*/project.json
+/*/README.txt
 
 # Editor directories and files
 .vscode/*
