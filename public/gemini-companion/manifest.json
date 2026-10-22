@@ -1,0 +1,21 @@
+{
+  "manifest_version": 3,
+  "name": "Health Video Studio — Gemini Companion",
+  "version": "1.0.0",
+  "description": "Bridges Health Video Studio with your active signed-in Gemini session without API keys or token extraction.",
+  "permissions": ["activeTab"],
+  "host_permissions": [
+    "https://gemini.google.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["https://gemini.google.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Gemini Assistant Companion"
+  }
+}
