@@ -49,7 +49,7 @@ export const FullAutomationModal: React.FC<FullAutomationModalProps> = ({
   const [synthesizeAudio, setSynthesizeAudio] = useState<boolean>(true);
 
   // Companion status
-  const extensionId = localStorage.getItem('hvs_gemini_extension_id') || '';
+  const [extensionId, setExtensionId] = useState<string>(() => localStorage.getItem('hvs_gemini_extension_id') || '');
   const [companionActive, setCompanionActive] = useState<boolean>(false);
 
   // Execution State
@@ -264,6 +264,34 @@ export const FullAutomationModal: React.FC<FullAutomationModalProps> = ({
                   </div>
                 </div>
               </div>
+
+              {/* Chrome Extension ID Input (for Hybrid / Gemini modes) */}
+              {mode !== 'local' && (
+                <div className="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-slate-200 flex items-center gap-2">
+                      <span>Chrome Companion Extension ID</span>
+                      <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full ${companionActive ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'}`}>
+                        {companionActive ? '✓ Connected' : 'Ready to connect'}
+                      </span>
+                    </label>
+                  </div>
+                  <input
+                    type="text"
+                    value={extensionId}
+                    onChange={(e) => {
+                      const val = e.target.value.trim();
+                      setExtensionId(val);
+                      localStorage.setItem('hvs_gemini_extension_id', val);
+                    }}
+                    placeholder="Paste your 32-character extension ID here"
+                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs font-mono text-slate-100 focus:outline-none focus:ring-1 focus:ring-cyan-400"
+                  />
+                  <p className="text-[11px] text-slate-400">
+                    Paste your Chrome extension ID here. Keep a tab open to <a href="https://gemini.google.com" target="_blank" rel="noreferrer" className="text-cyan-400 underline">gemini.google.com</a> signed in.
+                  </p>
+                </div>
+              )}
 
               {/* Style & Voice Configuration */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
